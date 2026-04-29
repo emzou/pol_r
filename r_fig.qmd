@@ -70,11 +70,11 @@ g <- graph_from_data_frame(edges, vertices = nodes)
 ```
 
 ```{r}
-set.seed(32) #this is important but as its random, i just tried random seeds until i found one that made the words overlap with each other the least. i think 20-28 are all more vertical oriented (bad)
+set.seed(20) #this is important but as its random, i just tried random seeds until i found one that made the words overlap with each other the least. i think 20-28 are all more vertical oriented (bad)
 p_main <- ggraph(g, layout = 'circlepack', weight = size) +
   geom_node_circle(aes(fill = category, filter = type == "word"), linewidth = 0.25) +
   geom_node_text(aes(label = ifelse(type == "word", name, ""), filter = type == "word"), size = 5) +
-  scale_fill_brewer(palette = "Set1", #https://github.com/EmilHvitfeldt/r-color-palettes
+  scale_fill_brewer(palette = "Set3", #https://github.com/EmilHvitfeldt/r-color-palettes
                     name = "Category", labels = function(x) str_to_title(x)
   ) +
   guides(
@@ -97,10 +97,10 @@ layout_data <- create_layout(g, layout = 'circlepack', weight = size)
 ref_node <- layout_data %>% filter(type == "word") %>% slice(1)
 scale_factor <- ref_node$r / sqrt(ref_node$size)
 legend_nodes <- data.frame(
-  size = c(8000, 160000, 400000),
-  r = sqrt(c(8000, 160000, 400000)) * scale_factor
+  size = c(100000, 300000, 600000),
+  r = sqrt(c(100000, 300000, 600000)) * scale_factor
 ) %>%
-  mutate(y = cumsum(r * 2.2))
+  mutate(y = cumsum(r * 3))
 
 # build vertical circle legend with true radii
 p_legend <- ggplot(legend_nodes) +
@@ -119,11 +119,11 @@ legends_stacked <- cat_legend / p_legend + plot_layout(heights = c(2, 1))
 
 # final combined plot
 p_main_no_legend + legends_stacked + 
-  plot_layout(widths = c(8, 1)) +  # reduce main plot dominance
+  plot_layout(widths = c(7, 1)) +  # reduce main plot dominance
   plot_annotation(theme = theme(plot.margin = margin(0,0,0,0)))
 
-final_plot <- p_main_no_legend + legends_stacked + plot_layout(widths = c(8, 1))
-#ggsave("circles.png", plot = final_plot, width = 12, height = 8, dpi = 300)
+final_plot <- p_main_no_legend + legends_stacked + plot_layout(widths = c(7, 1))
+ggsave("circles.png", plot = final_plot, width = 11, height = 8, dpi = 300)
 ```
 
 # 2 - Time Series, Democrat/Republican against left/right and liberal/conservative
@@ -182,6 +182,11 @@ make_ts(
   "party_ideo_ts.png"
 )
 ```
+
+So in this case, we should be cautious about using category names as representative of its terms: if what constitutes 'party' and 'ideology' are 1) unclear in definition and 2) interchangeable in practice, then it is better to compare the different spectrums (e.g, Democrat/Republican, Left/Right, Liberal/Conservative) themselves. This task is vastly simplified for us due to the binary nature of American political environment --- not only are there only two clear, directly opposed sides to choose from in each spectrum, the spectrums themselves are stacked atop each other. As such, the only referents allowed in the "Party/Ideology" category were "Democrat", "Left", "Liberal", and "Republican", "Right", "Conservative". 
+
+Figure 2 shows the overtime frequency of the 17 non-standard words related to party identity (i.e. interchangeable with "Democrats" and "Republicans") against the words related to ideology, split by the 11 non-standard analogues for "Liberals" and "Conservatives" and 9 non-standard analogues for "Left" and "Right"). The dominance of liberal/conservative 
+
 
 ## 2.1: Split by Left/Right alignment
 

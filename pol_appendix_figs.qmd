@@ -1,0 +1,63 @@
+---
+title: "pol_appendix_figs"
+format: html
+editor: visual
+---
+
+```{r}
+library(ggplot2)
+library(haven)
+library(tidyverse)
+library(patchwork)
+library(fixest)
+library(ggraph)
+library(igraph)
+library(ggfittext)
+library(patchwork)
+library(ggpubr)
+library(scales)
+#library(jsonlite)
+library(readxl)
+library(arrow)
+library(tidyr)
+#library(gt)  
+library(dplyr) 
+```
+
+```{r}
+make_candidate_ts <- function(df, labels, output_path,
+                              width = 9, height = 6) {
+  colnames(df)[1] <- "word"
+
+  df_long <- df %>%
+    pivot_longer(-word, names_to = "date", values_to = "count") %>%
+    left_join(labels %>% dplyr::select(word = rep, info, analog), by = "word") %>%
+    filter(info == "Candidate", !is.na(analog)) %>%
+    mutate(week = floor_date(as.Date(date), unit = "week")) %>%
+    group_by(week, analog) %>%
+    summarise(total = sum(count, na.rm = TRUE), .groups = "drop")
+
+  p <- ggplot(df_long, aes(x = week, y = total, color = analog)) +
+    geom_line(linewidth = 0.5) +
+    scale_x_date(
+      limits = as.Date(c("2014-01-01", "2025-12-31")),
+      date_breaks = "1 year",
+      date_labels = "%Y"
+    ) +
+    labs(title = "Candidate Mentions Over Time", x = "Date", y = "Word Occurrences", color = "Candidate") +
+    theme_classic() +
+    theme(
+      legend.position        = c(0.58, 0.78),
+      legend.justification   = c("left", "top"),
+      legend.background      = element_rect(fill = "white", color = "black", linewidth = 0.4),
+      legend.margin          = margin(4, 6, 4, 6),
+      legend.key.height      = unit(0.85, "lines"),
+      legend.key.size        = unit(0.85, "lines"),
+      legend.spacing.y       = unit(0.1, "cm"),
+    )
+  ggsave(output_path, plot = p, width = width, height = height, dpi = 300, units = "in")
+  return(p)
+}
+
+make_candidate_ts(read_csv("candidate_counts.csv"), labels, "candidates.png")
+```

@@ -1,4 +1,4 @@
-Mann-Whitney U (partisan < non-partisan): U = 702, p = 9.05e-10
+Mann-Whitney U (partisan < non-partisan): U = 2532, p = 6.32e-14
 N permutations per word: 10,000
 Eligible weeks in null pool: 535
 Real election window coverage: 315 of 4,373 valid days (7.20%)

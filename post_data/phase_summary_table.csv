@@ -1,0 +1,13 @@
+group,phase,median_logdev,rate_ratio,q25,q75,n
+Non-partisan,Off-cycle,0.01,1.01,-0.0,0.03,1280
+Non-partisan,Pre-extended (−31 to −18),-0.15,0.86,-0.33,0.06,1280
+Non-partisan,Pre-2wk (−17 to −4),-0.16,0.85,-0.37,0.04,1280
+Non-partisan,Election week (±3),-0.36,0.7,-0.62,-0.01,1280
+Non-partisan,Post-2wk (+4 to +17),-0.13,0.87,-0.35,0.11,1280
+Non-partisan,Post-extended (+18 to +31),-0.08,0.93,-0.28,0.11,1280
+Partisan,Off-cycle,-0.05,0.95,-0.08,-0.03,26
+Partisan,Pre-extended (−31 to −18),0.15,1.16,0.02,0.34,26
+Partisan,Pre-2wk (−17 to −4),0.26,1.3,0.17,0.48,26
+Partisan,Election week (±3),0.96,2.62,0.84,1.11,26
+Partisan,Post-2wk (+4 to +17),0.36,1.43,0.21,0.54,26
+Partisan,Post-extended (+18 to +31),-0.07,0.94,-0.24,0.02,26

@@ -61,3 +61,18 @@ make_candidate_ts <- function(df, labels, output_path,
 
 make_candidate_ts(read_csv("candidate_counts.csv"), labels, "candidates.png")
 ```
+
+### Robustness check / over-dispersion 
+* Note that the this currently doesn't work b/c need to feed data in, plan to hook it all up when which figures in appendix are finalized * 
+Estimated dispersion was θ = 0.6, indicating substantial overdispersion relative to Poisson. As a robustness check, we re-estimated the model with a fixed-effects Poisson specification with the same two-way clustering; coefficients were qualitatively unchanged, with somewhat larger point estimates as expected when overdispersed observations are not downweighted. We report the negative binomial estimates as the primary specification.
+```{r}
+summary(m)$theta   # the dispersion parameter; should be a positive finite number
+summary(m)$nobs    # number of observations used in fit
+m_pois <- fepois(
+  count ~ phase + i(phase, is_partisan, ref = "off_cycle") | word,
+  offset  = ~log(total_posts),
+  data    = at,
+  cluster = ~word + week
+)
+summary(m_pois)
+```

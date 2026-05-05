@@ -1,0 +1,5 @@
+{
+"Country": ["United States", "Britain", "China", "Europe", "Ukraine", "Russia"], 
+"Religion": ["Christian", "Catholic", "Protestant", "Muslim", "Jew", "Non-Jew", "Paganist", "Atheist"], 
+"Online": ["Reddit", "pol", "Daily Storm"]
+}

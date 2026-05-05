@@ -33,33 +33,36 @@ library(ggfittext)
 library(patchwork)
 library(ggpubr)
 library(scales)
-#library(jsonlite)
+library(jsonlite)
 library(readxl)
 library(arrow)
 library(tidyr)
 #library(gt)  
+library(cowplot)
 library(dplyr) 
+```
+```{r}
+library(jsonlite)
+library(broom)
 ```
 
 # Visuals Statuses (Statii?)
-- All old versions are still on Overleaf (concepts)
-- Processing data separately in Python notebooks, plan to re-annotate / clean up (currently have a lot of iteration/tests on notebooks)
 1.  Circle packing
     1.  Aesthetic fixes
 2.  Time Series - Democrat/Liberal/Left and Republican/Conservative/Right
     1.  Aesthetic fixes; potential supplementary visuals
-3.  Time Series - Candidates 
-    1. Aesthetic fixes
-4. Permutation Test 
+3. Permutation Test 
     1. Aesthetic fixes, which visuals should be used, how much detail to be included?
-5. Affect Bar Chart (Positive/Negative/Ambiguous/None) 
-    1. Aesthetic fixes
+4. Negative Binomial Regression
+5. Overall Affect Bar Chart (Positive/Negative/Ambiguous/None) 
+    1. Aesthetic fixes *possibly just a table?* 
+5. Negative/Positive Affect by Categories
 6. Slur affix table
     1. To be made in LateX, on Overleaf
-7. -tard and -oid ‘Conjoint’ tables
-    1. To be re-made in this document, made to look better
+7. -tard and -oid taxonomy
+    1. Possibly better on latex/overleaf
 
-# 1 - Circle Packing
+# Circle Packing
 The below figure shows the top 100 most used non-standard group-identity words; the size of each circle is scaled to the amount of posts a word appeared in. The word displayed is the lexeme representative (and so consolidates its singular variants).
 
 ```{r}
@@ -126,7 +129,7 @@ final_plot <- p_main_no_legend + legends_stacked + plot_layout(widths = c(7, 1))
 ggsave("circles.png", plot = final_plot, width = 11, height = 8, dpi = 300)
 ```
 
-# 2 - Time Series, Democrat/Republican against left/right and liberal/conservative
+# Time Series, Democrat/Republican against left/right and liberal/conservative
 ```{r}
 library(cowplot)
 ```
@@ -188,13 +191,13 @@ make_ts(
 
 So in this case, we should be cautious about using category names as representative of its terms: if what constitutes 'party' and 'ideology' are 1) unclear in definition and 2) interchangeable in practice, then it is better to compare the different spectrums (e.g, Democrat/Republican, Left/Right, Liberal/Conservative) themselves. This task is vastly simplified for us due to the binary nature of American political environment --- not only are there only two clear, directly opposed sides to choose from in each spectrum, the spectrums themselves are stacked atop each other. As such, the only referents allowed in the "Party/Ideology" category were "Democrat", "Left", "Liberal", and "Republican", "Right", "Conservative". 
 
-Figure 2 shows the overtime frequency of the 17 non-standard words related to party identity (i.e. interchangeable with "Democrats" and "Republicans") against the words related to ideology, split by the 11 non-standard analogues for "Liberals" and "Conservatives" and 9 non-standard analogues for "Left" and "Right"). The dominance of liberal/conservative 
+Figure 2 shows the overtime frequency of the 16 non-standard words related to party identity (i.e. interchangeable with "Democrats" and "Republicans") against the words related to ideology, split by the 11 non-standard analogues for "Liberals" and "Conservatives" and 9 non-standard analogues for "Left" and "Right"). The dominance of liberal/conservative 
 
 
-## 2.1: Split by Left/Right alignment
+## Time Series, split by Left/Right alignment
 
 ```{r}
-labels <- read_excel("word_dict_4.xlsx")
+labels <- read_excel("word_dict_5.xlsx")
 ```
 
 ```{r}
@@ -278,198 +281,11 @@ make_ts_split(
   "party_ideo_split.png"
 )
 ```
-
-# 4 - Permutation Test
-Compared to a (varied battery of) words referring to other group identities, partisan identity words are used far less frequently overall on /pol/. In the time series visuals (2, 3), (one notices) a seasonal, 'burst-like' nature of partisan word usage, centered around election periods. Similar to how words referring to specific presidential candidates spike in relevance when the candidate is campaigning, but fall off quickly when the candidate is no longer relevant, the usage of partisan words (could also be driven by events). As can be witnessed on /pol/, political discussion does not cease after election periods, and in this discussion, neither does the (usage) of group-identifying schemas. If partisan-identifying words are tied to election periods, it suggests that political identification and discussion is not inherently sustained by partisan cleavages. 
-
-A group-level permutation test (10,000 draws of 5 random non-election weeks) confirms that partisan words are disproportionately concentrated at real election weeks (observed median log-ratio = +0.367, p = 0.0002), while non-partisan words show no such concentration (observed = −0.136, p = 0.78), indicating that the election-specificity of partisan vocabulary is not a generic feature of identity-related terms.
-
-## 4.1 - Phase Splits 
-In our dataset, we observe five elections: November 8, 2016, November 6, 2018, November 3, 2020, November 8, 2022, and November 5, 2024. For each election date, we set the 'election period' as the week of the election, centered on the election (three days prior and three days after). We then set the 'pre' and 'post' election periods as the two weeks immediately before and after the election week, respectively, as well as an extended pre and post election period as the four weeks immediately before and after the pre and post election periods. 
-
-As word occurrences are tabulated on the post level, under the null hypothesis, all of a word's occurrences have an equal chance to appear in any post on /pol/. We compare a word's observed usage on a given day against its expected usage, if the word was randomly distributed over all posts on /pol/. We then split words into partisan (26) and non-partisan words (1280), and calculate the logged observed deviation from expected occurrences for each word in each phase. 
-
-```{r}
-dat <- read.csv("phase_summary_table.csv", check.names = FALSE,
-                stringsAsFactors = FALSE)
-partisan    <- dat[dat$group == "Partisan", -1]
-nonpartisan <- dat[dat$group == "Non-partisan", -1]
-cat("\n=== Partisan words ===\n")
-print(partisan, row.names = FALSE)
-```
-
-```{r}
-cat("\n=== Non-partisan words ===\n")
-print(nonpartisan, row.names = FALSE)
-```
-
-To test whether a word's temporal distribution is bounded to U.S. federal election dates, we use a per-word permutation test on the share of the word's usage falling within fixed-width windows centered on candidate dates. Under the null hypothesis that word w appears with equal probability in any post regardless of day, the log-ratio is centered at zero. Positive values indicate that word w is overrepresented in its time span; negative values indicate underrepresentation. To construct the null distribution, we sample 5 weeks from every non-election week from January 2014 to December 2025. For each word, a small p-value indicates that few alternative configurations of five non-election weeks produce concentrations as high as the one observed at the real election dates — that is, the word's temporal distribution is specifically organized around the actual election calendar rather than concentrated more generally. The category-level claim is that partisan words exhibit systematically lower per-word p-values than non-partisan words. We test this with a one-sided Mann-Whitney U test on the distributions of word p-values for the two groups.
-
-```{r}
-detail  <- read.csv("partisan_specificity_detail.csv", check.names = FALSE,
-                    stringsAsFactors = FALSE)
-summary <- read.csv("specificity_group_summary.csv", check.names = FALSE,
-                    stringsAsFactors = FALSE)
-
-cat("\n=== Partisan words: per-word election-specificity ===\n")
-print(detail, row.names = FALSE)
-
-cat("\n=== Group-level p-value distribution ===\n")
-print(summary, row.names = FALSE)
-
-cat("\n=== Test stats ===\n")
-cat(readLines("specificity_test_stats.txt"), sep = "\n")
-
-```
-Permutation p-values for non-partisan words were approximately uniform (median 0.567, 6.3% below 0.05), as expected under the null. Partisan words departed sharply from this baseline: 61.5% fell below 0.05, with a median of 0.038 and Q25 of 0.001, indicating a concentration of extreme values rather than a uniform shift. 
-
-```{r}
-null_df <- as.data.frame(read_parquet("group_specificity_null.parquet"))
-obs_df  <- as.data.frame(read_parquet("group_specificity_observed.parquet"))
-
-# Format facet labels with observed value and p-value
-obs_df$p_label <- ifelse(obs_df$p_value < 1/10000,
-                         "p < 0.0001",
-                         sprintf("p = %.4f", obs_df$p_value))
-obs_df$facet_label <- sprintf("%s words\nobserved median = %+.3f, %s",
-                              obs_df$group, obs_df$observed, obs_df$p_label)
-
-# Attach facet labels to the null draws
-null_df <- merge(null_df,
-                 obs_df[, c("group", "facet_label", "observed")],
-                 by = "group", all.x = TRUE)
-
-# Set factor order so partisan appears first
-null_df$facet_label <- factor(null_df$facet_label,
-  levels = obs_df$facet_label[order(obs_df$group != "partisan")])
-
-ggplot(null_df, aes(x = median_log_ratio)) +
-  geom_histogram(bins = 60, fill = "gray70", color = "white", linewidth = 0.2) +
-  geom_vline(aes(xintercept = observed), color = "#c1272d", linewidth = 1) +
-  geom_vline(xintercept = 0, color = "black", linetype = "dashed", alpha = 0.4) +
-  facet_wrap(~ facet_label, scales = "free", ncol = 2) +
-  labs(
-    x = "median log-ratio across words in group",
-    y = "count of permutations",
-    title = "Group-level election-specificity null",
-    subtitle = "10,000 draws of 5 random non-election weeks; red line = observed value at real elections"
-  ) +
-  theme_minimal(base_size = 11) +
-  theme(plot.title = element_text(face = "bold"),
-        strip.text = element_text(face = "bold"))
-
-ggsave("group_specificity_null.png", width = 10, height = 4.5, dpi = 150)
-
-```
-The permutation test asks whether partisan (and separately, non-partisan) words are more concentrated at real election weeks than they would be at any random selection of 5 non-election weeks. For each iteration, we draw 5 eligible non-election weeks at random, compute each word's log-ratio of its share-in-window to total-volume-share-in-window, then take the median log-ratio across all words in the group. Repeating this 10,000 times gives a null distribution of "what does group-level concentration look like at five arbitrary weeks?" The observed statistic is the same median log-ratio computed at the five real election weeks. The p-value is the fraction of null draws that meet or exceed the observed value (one-sided, upper tail).
-
-For partisan words, the observed median log-ratio at real elections is +0.432, meaning partisan words appear at roughly e^0.432 ≈ 1.54× their baseline volume share during election windows. Only 1 of 10,000 random non-election-week draws produced a median this high (p < 0.0001), so the concentration *is highly unlikely under the null that election weeks are exchangeable with arbitrary non-election weeks*.
-
-For non-partisan words, the observed median is −0.113 (roughly 0.87× baseline share — slightly under-represented at elections), and 77% of null draws produced a median at or above this value (p = 0.77). The observed sits comfortably inside the null, so non-partisan words show no election-specific concentration. The slight negative sign is suggestive of mild displacement during election windows but isn't tested directly here, since the test is one-sided upward.
-
-## 4.2 Negative Binomial Regression
-We fit a fixed-effects negative binomial regression of weekly word counts on phase and phase × partisan interactions, with word fixed effects absorbing baseline frequencies, log total /pol/ posts as an offset to convert counts to rates, and standard errors two-way clustered by word and week. Phase main effects capture the non-partisan trajectory across the election cycle; the interaction terms estimate the additional partisan response in each phase relative to off-cycle, providing a difference-in-differences decomposition of election sensitivity.
-
-```{r}
-at <- as.data.frame(read_parquet("weekly_table_for_r.parquet"))
-phase_levels <- c("off_cycle", "pre_extended", "pre_2wk",
-                  "election_week", "post_2wk", "post_extended")
-at$phase       <- factor(at$phase, levels = phase_levels)
-at$is_partisan <- as.logical(at$is_partisan)
-
-# ---- Fit NB regression ----
-#https://arxiv.org/html/2407.11937v1
-# phase main effect:        non-partisan response in each phase vs. off_cycle (crowding out????)
-# i(phase, is_partisan):    additional partisan response on top of that
-# | word:                   word fixed effects absorb baseline rates
-# offset = log(total_posts): converts counts to rates
-m <- fenegbin(
-  count ~ phase + i(phase, is_partisan, ref = "off_cycle") | word,
-  offset  = ~log(total_posts),
-  data    = at,
-  cluster = ~word + week
-)
-#resume stargazer abuse later
-#https://yiqingxu.org/packages/fect/06-plots.html#placebo-testshape-markers I think I'm not sure how to operationalize 'period before election' for each word, if each election should be treated as independent? Or to show... 
-summary(m)
-```
-Non-partisan words show no detectable change across the election cycle (all phase main effects p > 0.5), ruling out generalized crowding-out of identity-related vocabulary during election weeks. Partisan words, by contrast, exhibit a sharp transient response: usage rates are 55% higher than off-cycle in the two weeks before the election (β = 0.437, p < 0.001), roughly 3× higher during election week itself (β = 1.098, p < 10⁻⁸), 33% higher in the two weeks after (β = 0.288, p < 0.05), and return to off-cycle baseline thereafter. The symmetric ramp-up and decay around a sharp election-week peak indicates that partisan vocabulary systematically rises during election timing at a higher rate than sustained shifts across all /pol/ discourse.
-```{r}
-elec_years <- as.integer(substr(unique(at$week[at$phase == "election_week"]), 1, 4))
-# -> c(2016, 2018, 2020, 2022, 2024)
-yr <- as.integer(substr(at$week, 1, 4))
-at$election <- factor(elec_years[
-  apply(abs(outer(yr, elec_years, "-")), 1, which.min)
-])
-```
+Compared to a (varied battery of) words referring to other group identities, partisan identity words are used far less frequently overall on /pol/. In the time series visuals (2, 3), (one notices) a seasonal, 'burst-like' nature of partisan word usage, centered around election periods.  As can be witnessed on /pol/, political discussion does not cease after election periods, and in this discussion, neither does the (usage) of group-identifying schemas. If partisan-identifying words are tied to election periods, it suggests that political identification and discussion is not inherently sustained by partisan cleavages. 
 
 
-```{r}
-#| results: asis
-m_elecfe <- fenegbin(
-  count ~ phase + i(phase, is_partisan, ref = "off_cycle") | word + election,
-  offset  = ~log(total_posts),
-  cluster = ~word + week,
-  data    = at
-)
-
-etable(m, m_elecfe,
-       title = "NB regression: partisan x phase, robustness to election FE",
-       tex   = TRUE)
-```
-
-effect is actually more significant in midterm cycles... 
-```{r}
-elections <- c("2016", "2018", "2020", "2022", "2024")
-
-fits <- lapply(elections, function(e) {
-  fenegbin(
-    count ~ phase + i(phase, is_partisan, ref = "off_cycle") | word,
-    offset  = ~log(total_posts),
-    cluster = ~word + week,
-    data    = at[at$election == e, ]
-  )
-})
-names(fits) <- elections
-
-gamma_df <- do.call(rbind, lapply(elections, function(e) {
-  co  <- coeftable(fits[[e]])
-  row <- grep("election_week.*is_partisan", rownames(co))
-  data.frame(
-    election = e,
-    est = co[row, "Estimate"],
-    se  = co[row, "Std. Error"]
-  )
-}))
-gamma_df$lo <- gamma_df$est - 1.96 * gamma_df$se
-gamma_df$hi <- gamma_df$est + 1.96 * gamma_df$se
-
-ggplot(gamma_df, aes(x = election, y = est, ymin = lo, ymax = hi)) +
-  geom_hline(yintercept = 0, linetype = "dashed", color = "grey50") +
-  geom_pointrange() +
-  labs(x = NULL,
-       y = expression(hat(gamma)[election~week]),
-       title = "Partisan x election-week interaction, by cycle") +
-  theme_minimal()
-
-
-```
-
-### Robustness check / over-dispersion 
-Estimated dispersion was θ = 0.6, indicating substantial overdispersion relative to Poisson. As a robustness check, we re-estimated the model with a fixed-effects Poisson specification with the same two-way clustering; coefficients were qualitatively unchanged, with somewhat larger point estimates as expected when overdispersed observations are not downweighted. We report the negative binomial estimates as the primary specification.
-```{r}
-summary(m)$theta   # the dispersion parameter; should be a positive finite number
-summary(m)$nobs    # number of observations used in fit
-m_pois <- fepois(
-  count ~ phase + i(phase, is_partisan, ref = "off_cycle") | word,
-  offset  = ~log(total_posts),
-  data    = at,
-  cluster = ~word + week
-)
-summary(m_pois)
-```
-
-## 4.3 Event Study Plot
+# Event Study Plot (Descriptive)
+Across all five cycles, partisan vocabulary spikes sharply in the days surrounding election day, while non-partisan vocabulary remains at baseline. The remainder of this section establishes (i) the magnitude of the partisan surge under formal modeling, (ii) that the temporal concentration could not plausibly arise by chance, and (iii) that the pattern holds — with notable heterogeneity — across all five cycles.
 ```{r}
 ev <- as.data.frame(read_parquet("event_study_data.parquet"))
 ev$is_partisan <- factor(ev$is_partisan, levels = c(FALSE, TRUE),
@@ -506,25 +322,261 @@ ggplot(ev, aes(x = days_to_election, y = rate_ratio,
 
 ggsave("event_study.png", width = 10, height = 7, dpi = 150)
 ```
+... and then look into / suggest what happened in 2016 (what day that spike is)
 
 
-# 5 Affect Bar
+# Negative Binomial Regression
+We fit a fixed-effects negative binomial regression of weekly word counts on phase and phase × partisan interactions, with word fixed effects absorbing baseline frequencies, log total /pol/ posts as an offset to convert counts to rates, and standard errors two-way clustered by word and week. Phase main effects capture the non-partisan trajectory across the election cycle; the interaction terms estimate the additional partisan response in each phase relative to off-cycle, providing a difference-in-differences decomposition of election sensitivity.
+
 ```{r}
-p1 <- labels |>
-  count(affect) |>
-  ggplot(aes(x = n, y = fct_reorder(affect, n))) +
-  geom_col() +
-  labs(x = "Number of Lexemes", y = NULL, title = "By row count") +
-  theme_minimal()
+at <- as.data.frame(read_parquet("weekly_table_for_r.parquet"))
+phase_levels <- c("off_cycle", "pre_extended", "pre_2wk",
+                  "election_week", "post_2wk", "post_extended")
+at$phase       <- factor(at$phase, levels = phase_levels)
+at$is_partisan <- as.logical(at$is_partisan)
 
-p2 <- labels |>
+# ---- Fit NB regression ----
+#https://arxiv.org/html/2407.11937v1
+# phase main effect:        non-partisan response in each phase vs. off_cycle (crowding out????)
+# i(phase, is_partisan):    additional partisan response on top of that
+# | word:                   word fixed effects absorb baseline rates
+# offset = log(total_posts): converts counts to rates
+m <- fenegbin(
+  count ~ phase + i(phase, is_partisan, ref = "off_cycle") | word,
+  offset  = ~log(total_posts),
+  data    = at,
+  cluster = ~word + week
+)
+#resume stargazer abuse later
+#https://yiqingxu.org/packages/fect/06-plots.html#placebo-testshape-markers I think I'm not sure how to operationalize 'period before election' for each word, if each election should be treated as independent? Or to show... 
+summary(m)
+```
+
+Non-partisan words show no detectable change across the election cycle (all phase main effects p > 0.5), ruling out generalized crowding-out of identity-related vocabulary during election weeks. Partisan words, by contrast, exhibit a sharp transient response: usage rates are 55% higher than off-cycle in the two weeks before the election (β = 0.437, p < 0.001), roughly 3× higher during election week itself (β = 1.098, p < 10⁻⁸), 33% higher in the two weeks after (β = 0.288, p < 0.05), and return to off-cycle baseline thereafter. The symmetric ramp-up and decay around a sharp election-week peak indicates that partisan vocabulary systematically rises during election timing at a higher rate than sustained shifts across all /pol/ discourse.
+
+#  Permutation Test
+While the regression establishes the magnitude of the partisan surge, it does not rule out that the temporal concentration could arise by chance. We therefore conduct a lexeme-level permutation test (10,000 draws of 5 random non-election weeks) to confirm that partisan words are disproportionately concentrated at real election weeks (observed median log-ratio = +0.367, p = 0.0002), while non-partisan words show no such concentration (observed = −0.136, p = 0.78), indicating that the election-specificity of partisan vocabulary is not a generic feature of identity-related terms.
+
+## Phase Splits 
+In our dataset, we observe five elections: November 8, 2016, November 6, 2018, November 3, 2020, November 8, 2022, and November 5, 2024. For each election date, we set the 'election period' as the week of the election, centered on the election (three days prior and three days after). We then set the 'pre' and 'post' election periods as the two weeks immediately before and after the election week, respectively, as well as an extended pre and post election period as the four weeks immediately before and after the pre and post election periods. 
+
+As word occurrences are tabulated on the post level, under the null hypothesis, all of a word's occurrences have an equal chance to appear in any post on /pol/. We compare a word's observed usage on a given day against its expected usage, if the word was randomly distributed over all posts on /pol/. We then split words into partisan (26) and non-partisan words (1280), and calculate the logged observed deviation from expected occurrences for each word in each phase. 
+
+### Log Deviations
+Table (n) and (m) show the (baseline) deviations from median (in log) statistic for partisan and non-partisan words. 
+```{r}
+dat <- read.csv("phase_summary_table.csv", check.names = FALSE,
+                stringsAsFactors = FALSE)
+partisan    <- dat[dat$group == "Partisan", -1]
+nonpartisan <- dat[dat$group == "Non-partisan", -1]
+print(partisan, row.names = FALSE)
+print(nonpartisan, row.names = FALSE)
+```
+### Permutation test results
+To test whether a word's temporal distribution is bounded to U.S. federal election dates, we use a per-word permutation test on the share of the word's usage falling within fixed-width windows centered on candidate dates. Under the null hypothesis that word w appears with equal probability in any post regardless of day, the log-ratio is centered at zero. Positive values indicate that word w is overrepresented in its time span; negative values indicate underrepresentation. To construct the null distribution, we sample 5 weeks from every non-election week from January 2014 to December 2025. For each word, a small p-value indicates that few alternative configurations of five non-election weeks produce concentrations as high as the one observed at the real election dates — that is, the word's temporal distribution is specifically organized around the actual election calendar rather than concentrated more generally. The category-level claim is that partisan words exhibit systematically lower per-word p-values than non-partisan words. We test this with a one-sided Mann-Whitney U test on the distributions of word p-values for the two groups.
+
+```{r}
+# These csvs don't need any modifications in R, unless want different format than LateX table. 
+detail  <- read.csv("partisan_specificity_detail.csv", check.names = FALSE,
+                    stringsAsFactors = FALSE)
+summary <- read.csv("specificity_group_summary.csv", check.names = FALSE,
+                    stringsAsFactors = FALSE)
+print(detail)
+print (summary)
+```
+Permutation p-values for non-partisan words were approximately uniform (median 0.567, 6.3% below 0.05), as expected under the null. Partisan words departed sharply from this baseline: 61.5% fell below 0.05, with a median of 0.038 and Q25 of 0.001, indicating a concentration of extreme values rather than a uniform shift. 
+
+### Distribution of null/observed
+```{r}
+null_df <- as.data.frame(read_parquet("group_specificity_null.parquet"))
+obs_df  <- as.data.frame(read_parquet("group_specificity_observed.parquet"))
+obs_df$p_label <- ifelse(obs_df$p_value < 1/10000,
+                         "p < 0.0001",
+                         sprintf("p = %.4f", obs_df$p_value))
+obs_df$facet_label <- sprintf("%s words\nobserved median = %+.3f, %s",
+                              obs_df$group, obs_df$observed, obs_df$p_label)
+
+null_df <- merge(null_df,
+                 obs_df[, c("group", "facet_label", "observed")],
+                 by = "group", all.x = TRUE)
+
+# Set factor order so partisan appears first
+null_df$facet_label <- factor(null_df$facet_label,
+  levels = obs_df$facet_label[order(obs_df$group != "partisan")])
+
+ggplot(null_df, aes(x = median_log_ratio)) +
+  geom_histogram(bins = 60, fill = "gray70", color = "white", linewidth = 0.2) +
+  geom_vline(aes(xintercept = observed), color = "#c1272d", linewidth = 1) +
+  geom_vline(xintercept = 0, color = "black", linetype = "dashed", alpha = 0.4) +
+  facet_wrap(~ facet_label, scales = "free", ncol = 2) +
+  labs(
+    x = "median log-ratio across words in group",
+    y = "count of permutations",
+    title = "Group-level election-specificity null",
+    subtitle = "10,000 draws of 5 random non-election weeks; red line = observed value at real elections"
+  ) +
+  theme_minimal(base_size = 11) +
+  theme(plot.title = element_text(face = "bold"),
+        strip.text = element_text(face = "bold"))
+
+ggsave("group_specificity_null.png", width = 10, height = 4.5, dpi = 150)
+
+```
+The permutation test asks whether partisan (and separately, non-partisan) words are more concentrated at real election weeks than they would be at any random selection of 5 non-election weeks. For each iteration, we draw 5 eligible non-election weeks at random, compute each word's log-ratio of its share-in-window to total-volume-share-in-window, then take the median log-ratio across all words in the group. Repeating this 10,000 times gives a null distribution of "what does group-level concentration look like at five arbitrary weeks?" The observed statistic is the same median log-ratio computed at the five real election weeks. The p-value is the fraction of null draws that meet or exceed the observed value (one-sided, upper tail).
+
+For partisan words, the observed median log-ratio at real elections is +0.432, meaning partisan words appear at roughly e^0.432 ≈ 1.54× their baseline volume share during election windows. Only 1 of 10,000 random non-election-week draws produced a median this high (p < 0.0001), so the concentration *is highly unlikely under the null that election weeks are exchangeable with arbitrary non-election weeks*.
+
+For non-partisan words, the observed median is −0.113 (roughly 0.87× baseline share — slightly under-represented at elections), and 77% of null draws produced a median at or above this value (p = 0.77). The observed sits comfortably inside the null, so non-partisan words show no election-specific concentration. The slight negative sign is suggestive of mild displacement during election windows but isn't tested directly here, since the test is one-sided upward.
+
+# Testing for Year-Specific Heterogeneity
+## Fixed Effects
+To check that the partisan × phase effects aren't being driven by a single high-partisan (??) cycle in the pooled estimate, we add election-cycle fixed effects so the interaction is identified within-cycle; if no one cycle is dominating, the coefficients should remain stable in magnitude and significance.
+```{r}
+elec_years <- as.integer(substr(unique(at$week[at$phase == "election_week"]), 1, 4))
+# -> c(2016, 2018, 2020, 2022, 2024)
+yr <- as.integer(substr(at$week, 1, 4))
+at$election <- factor(elec_years[
+  apply(abs(outer(yr, elec_years, "-")), 1, which.min)
+])
+m_elecfe <- fenegbin(
+  count ~ phase + i(phase, is_partisan, ref = "off_cycle") | word + election,
+  offset  = ~log(total_posts),
+  cluster = ~word + week,
+  data    = at
+)
+etable(m, m_elecfe,
+       title = "NB regression: partisan x phase, robustness to election FE",
+       tex     = TRUE,
+       file    = "partisan_phase_robustness.tex",
+       replace = TRUE)
+```
+Table (n) shows that the the election fixed effects absorb substantial cross-cycle variation in baseline usage (ΔBIC ≈ −24,000), so their failure to attenuate the partisan × phase interactions provides genuine evidence of within-cycle identification rather than reflecting an absence of between-cycle variation to absorb, (that is, no individual election drives the cyclic pattern.)
+
+### Visuals -- Which one preferred? Show at all? Appendix?
+However, as (below visual indicates,) presidential years (2016, 2020, 2024) all show smaller election-week interactions than the midterm years. This is counterintuitive, as (people tend to be more engaged/invested in presidential years rather than midterm (one of shanto's papers i think? find)), and as such (we would expect the partisan spike to be larger in presidential years)
+```{r}
+#| simpler but takes a lot of real estate to convey simple(fied) statistic
+elections <- c("2016", "2018", "2020", "2022", "2024")
+fits <- lapply(elections, function(e) {
+  fenegbin(
+    count ~ phase + i(phase, is_partisan, ref = "off_cycle") | word,
+    offset  = ~log(total_posts),
+    cluster = ~word + week,
+    data    = at[at$election == e, ]
+  )
+})
+names(fits) <- elections
+gamma_df <- do.call(rbind, lapply(elections, function(e) {
+  co  <- coeftable(fits[[e]])
+  row <- grep("election_week.*is_partisan", rownames(co))
+  data.frame(
+    election = e,
+    est = co[row, "Estimate"],
+    se  = co[row, "Std. Error"]
+  )
+}))
+gamma_df$lo <- gamma_df$est - 1.96 * gamma_df$se
+gamma_df$hi <- gamma_df$est + 1.96 * gamma_df$se
+ggplot(gamma_df, aes(x = election, y = est, ymin = lo, ymax = hi)) +
+  geom_hline(yintercept = 0, linetype = "dashed", color = "grey50") +
+  geom_pointrange() +
+  labs(x = NULL,
+       y = expression(hat(gamma)[election~week]),
+       title = "Partisan x election-week interaction, by cycle") +
+  theme_minimal()
+```
+
+```{r}
+phase_levels <- c("pre_extended", "pre_2wk", "election_week",
+                  "post_2wk", "post_extended")
+event_time   <- c(-2, -1, 0, 1, 2)
+
+gamma_df <- do.call(rbind, lapply(elections, function(e) {
+  td <- tidy(fits[[e]], conf.int = TRUE)
+  td <- td[grepl("is_partisan", td$term) & grepl("phase", td$term), ]
+  data.frame(
+    election = e,
+    phase    = sub(".*(pre_extended|pre_2wk|election_week|post_2wk|post_extended).*",
+                   "\\1", td$term),
+    est      = td$estimate,
+    se       = td$std.error,
+    lo       = td$conf.low,
+    hi       = td$conf.high
+  )
+}))
+
+gamma_df$lo         <- gamma_df$est - 1.96 * gamma_df$se
+gamma_df$hi         <- gamma_df$est + 1.96 * gamma_df$se
+gamma_df$phase_t    <- event_time[match(gamma_df$phase, phase_levels)]
+gamma_df$cycle_type <- ifelse(gamma_df$election %in% c("2018", "2022"),
+                              "Midterm", "Presidential")
+
+p <- ggplot(gamma_df, aes(x = phase_t, y = est, ymin = lo, ymax = hi,
+                          color = cycle_type, linetype = cycle_type)) +
+  geom_hline(yintercept = 0, linetype = "dashed", color = "grey60") +
+  geom_vline(xintercept = 0, linetype = "dashed", color = "grey60") +
+  geom_line(linewidth = 0.7) +
+  geom_pointrange(size = 0.4, fatten = 2.5) +
+  facet_wrap(~ election, nrow = 1) +
+  scale_x_continuous(breaks = event_time,
+                     labels = c("-2wk", "-1wk", "Elec", "+1wk", "+2wk")) +
+  scale_color_manual(values = c("Midterm"      = "#c1272d",
+                                "Presidential" = "#2a4d69")) +
+  scale_linetype_manual(values = c("Midterm"      = "solid",
+                                   "Presidential" = "solid")) +
+  labs(x        = "phase relative to election",
+       y        = expression("partisan × phase coefficient ("*hat(gamma)*")"),
+       color    = NULL,
+       linetype = NULL) +
+  theme_cowplot(font_size = 11) +
+  theme(strip.background = element_blank(),
+        strip.text       = element_text(face = "bold"),
+        legend.position  = "bottom",
+        panel.spacing.x  = unit(0.8, "lines"))
+
+ggsave("cycle_specific_event_study.png", p,
+       width = 11, height = 3.5, dpi = 300)
+```
+
+
+
+# Affect Bar
+```{r}
+labels |>
   group_by(affect) |>
   summarise(total = sum(count, na.rm = TRUE)) |>
   ggplot(aes(x = total, y = fct_reorder(affect, total))) +
   geom_col() +
-  labs(x = "Total (post) appearances", y = NULL, title = "By summed count") +
+  labs(x = "Total (post) appearances", y = NULL, title = "By total count") +
   theme_minimal()
+```
 
-p1 + p2
 
+
+# Distribution of Affect by Categories
+```{r}
+groups <- fromJSON("show_these.json", simplifyVector = FALSE) |>
+  tibble::enframe(name = "cat", value = "analog") |>
+  unnest(analog) |>
+  mutate(analog = unlist(analog))
+```
+
+```{r}
+podf <- merge(groups, labels[, c("analog", "affect", "thread_count")], by = "analog")
+```
+
+```{r}
+df_plot <- podf[podf$affect %in% c("Positive", "Negative"), ]
+df_plot$value <- ifelse(df_plot$affect == "Negative", -df_plot$thread_count, df_plot$thread_count)
+
+ggplot(df_plot, aes(x = value, y = analog, fill = affect)) +
+  geom_col() +
+  geom_vline(xintercept = 0) +
+  facet_grid(cat ~ ., scales = "free_y", space = "free_y", switch = "y") +
+  scale_x_continuous(labels = function(x) format(abs(x), big.mark = ",")) +
+  labs(x = "Thread count", y = NULL) +
+  theme_minimal() +
+  theme(strip.placement = "outside",
+        strip.text.y.left = element_text(angle = 0),
+        panel.spacing.y = unit(0.4, "lines"))
 ```

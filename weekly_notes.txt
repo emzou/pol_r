@@ -1,0 +1,25 @@
+Week 6 
+1. I read up on BIC this morning, but I didn't learn it in 450A/B; maybe its upcoming in 450C? 
+Not sure if should report statistic (F-test/Wald test) that I am more familiar with
+
+
+
+
+Week 5
+Visuals Statuses (Statii?)
+- All old versions are still on Overleaf (concepts)
+- Processing data separately in Python notebooks, plan to re-annotate / clean up (currently have a lot of iteration/tests on notebooks)
+1.  Circle packing
+    1.  Aesthetic fixes
+2.  Time Series - Democrat/Liberal/Left and Republican/Conservative/Right
+    1.  Aesthetic fixes; potential supplementary visuals
+3.  Time Series - Candidates 
+    1. Aesthetic fixes
+4. Permutation Test 
+    1. Aesthetic fixes, which visuals should be used, how much detail to be included?
+5. Affect Bar Chart (Positive/Negative/Ambiguous/None) 
+    1. Aesthetic fixes
+6. Slur affix table
+    1. To be made in LateX, on Overleaf
+7. -tard and -oid ‘Conjoint’ tables
+    1. To be re-made in this document, made to look better

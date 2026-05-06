@@ -566,10 +566,7 @@ podf <- merge(groups, labels[, c("analog", "affect", "thread_count")], by = "ana
 ```
 
 ```{r}
-df_plot <- podf[podf$affect %in% c("Positive", "Negative"), ]
-df_plot$value <- ifelse(df_plot$affect == "Negative", -df_plot$thread_count, df_plot$thread_count)
-
-ggplot(df_plot, aes(x = value, y = analog, fill = affect)) +
+p <- ggplot(df_plot, aes(x = value, y = analog, fill = affect)) +
   geom_col() +
   geom_vline(xintercept = 0) +
   facet_grid(cat ~ ., scales = "free_y", space = "free_y", switch = "y") +
@@ -579,4 +576,7 @@ ggplot(df_plot, aes(x = value, y = analog, fill = affect)) +
   theme(strip.placement = "outside",
         strip.text.y.left = element_text(angle = 0),
         panel.spacing.y = unit(0.4, "lines"))
+
+ggsave("affect_thread_counts.png", p,
+       width = 9, height = 10, dpi = 300)
 ```

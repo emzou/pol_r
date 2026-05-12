@@ -40,27 +40,9 @@ library(tidyr)
 #library(gt)  
 library(cowplot)
 library(dplyr) 
-```
-```{r}
 library(jsonlite)
 library(broom)
 ```
-
-# Visuals Statuses (Statii?)
-1.  Circle packing
-    1.  Aesthetic fixes
-2.  Time Series - Democrat/Liberal/Left and Republican/Conservative/Right
-    1.  Aesthetic fixes; potential supplementary visuals
-3. Permutation Test 
-    1. Aesthetic fixes, which visuals should be used, how much detail to be included?
-4. Negative Binomial Regression
-5. Overall Affect Bar Chart (Positive/Negative/Ambiguous/None) 
-    1. Aesthetic fixes *possibly just a table?* 
-5. Negative/Positive Affect by Categories
-6. Slur affix table
-    1. To be made in LateX, on Overleaf
-7. -tard and -oid taxonomy
-    1. Possibly better on latex/overleaf
 
 # Circle Packing
 The below figure shows the top 100 most used non-standard group-identity words; the size of each circle is scaled to the amount of posts a word appeared in. The word displayed is the lexeme representative (and so consolidates its singular variants).
@@ -562,21 +544,35 @@ groups <- fromJSON("show_these.json", simplifyVector = FALSE) |>
 ```
 
 ```{r}
-podf <- merge(groups, labels[, c("analog", "affect", "thread_count")], by = "analog")
+podf |> dplyr::glimpse()
+podf |> dplyr::summarise(n = dplyr::n(),
+                         na_prop = sum(is.na(prop)),
+                         range = paste(range(prop, na.rm = TRUE), collapse = " / "))
+
 ```
 
+
 ```{r}
-p <- ggplot(df_plot, aes(x = value, y = analog, fill = affect)) +
+podf <- merge(groups, labels[, c("analog", "affect", "thread_count")], by = "analog") |>
+  group_by(analog) |>
+  mutate(prop = thread_count / sum(thread_count),
+         prop = if_else(affect == "Negative", -prop, prop)) |>
+  ungroup()
+
+p <- ggplot(podf, aes(x = prop, y = analog, fill = affect)) +
   geom_col() +
   geom_vline(xintercept = 0) +
   facet_grid(cat ~ ., scales = "free_y", space = "free_y", switch = "y") +
-  scale_x_continuous(labels = function(x) format(abs(x), big.mark = ",")) +
-  labs(x = "Thread count", y = NULL) +
+  scale_x_continuous(labels = function(x) scales::percent(abs(x), accuracy = 1),
+                     limits = c(-1, 1)) +
+  labs(x = "Share of threads", y = NULL) +
   theme_minimal() +
   theme(strip.placement = "outside",
         strip.text.y.left = element_text(angle = 0),
         panel.spacing.y = unit(0.4, "lines"))
+```
 
-ggsave("affect_thread_counts.png", p,
-       width = 9, height = 10, dpi = 300)
+```{r}
+p
+
 ```

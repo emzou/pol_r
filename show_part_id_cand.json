@@ -1,0 +1,5 @@
+{
+"Party/Ideology": ["Democrat, Republican", "Liberal", "Conservative", "Left", "Right"], 
+"Presidential Candidate": ["Hillary Clinton", "Bernie Sanders", "Donald Trump", "Joe Biden"], 
+"Stance": ["MAGA", "QAnon", "Antifa"]
+}

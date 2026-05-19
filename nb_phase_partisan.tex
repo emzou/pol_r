@@ -1,0 +1,44 @@
+
+\begin{table}[htbp]
+   \caption{\label{tab:nb-phase-partisan} Partisan vocabulary response across election-cycle phases}
+   \bigskip
+   \centering
+   \begin{tabular}{lc}
+      \toprule
+                                       & count\\  
+                                       & (1)\\  
+      \midrule 
+      Pre-election (extended)          & 0.005\\   
+                                       & (0.082)\\   
+      Pre-election (2wk)               & -0.016\\   
+                                       & (0.078)\\   
+      Election week                    & 0.057\\   
+                                       & (0.117)\\   
+      Post-election (2wk)              & 0.051\\   
+                                       & (0.072)\\   
+      Post-election (extended)         & 0.038\\   
+                                       & (0.083)\\   
+      Pre-extended $\times$ Partisan   & 0.266$^{**}$\\   
+                                       & (0.129)\\   
+      Pre-2wk $\times$ Partisan        & 0.502$^{***}$\\   
+                                       & (0.117)\\   
+      Election week $\times$ Partisan  & 1.12$^{***}$\\   
+                                       & (0.181)\\   
+      Post-2wk $\times$ Partisan       & 0.316$^{***}$\\   
+                                       & (0.108)\\   
+      Post-extended $\times$ Partisan  & -0.060\\   
+                                       & (0.122)\\   
+       \\
+      Observations                     & 468,732\\  
+      Pseudo R$^2$                     & 0.12716\\  
+      Over-dispersion                  & 0.73848\\  
+       \\
+      Word fixed effects               & $\checkmark$\\   
+      \bottomrule
+   \end{tabular}
+   
+   \par \raggedright 
+   Negative binomial with word FE; SEs clustered by word and week. Offset: $\log(\text{total\_posts})$.
+\end{table}
+
+

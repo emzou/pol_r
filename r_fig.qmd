@@ -43,6 +43,11 @@ library(dplyr)
 library(jsonlite)
 library(broom)
 ```
+# Descriptive Info
+```{r}
+labels |> count(category)
+```
+
 
 # Circle Packing
 The below figure shows the top 100 most used non-standard group-identity words; the size of each circle is scaled to the amount of posts a word appeared in. The word displayed is the lexeme representative (and so consolidates its singular variants).
@@ -118,13 +123,13 @@ library(cowplot)
 
 ```{r}
 cat_colors <- c(
-  "Left/Right"           = "#56B4E9",
-  "Liberal/Conservative" = "#0072B2",
-  "Democrat/Republican"  = "#FFC325"
+  "Liberal/Conservative" = "#A0A0A0",
+  "Left/Right"           = "#C0C0C0",
+  "Democrat/Republican"  = "#00A087FF"
 )
 
 make_ts <- function(dfs, output_path,
-                    width = 9, height = 6) {
+                    width = 8, height = 4) {
   df_long <- imap_dfr(dfs, function(df, cat_name) {
     colnames(df)[1] <- "word"
     df %>%
@@ -137,23 +142,28 @@ make_ts <- function(dfs, output_path,
     mutate(category = factor(category, levels = names(cat_colors)))
 
   p <- ggplot(df_long, aes(x = week, y = total, color = category)) +
-    geom_line(linewidth = 0.5) +
+    geom_line(linewidth = 0.4) +
     scale_color_manual(values = cat_colors) +
     scale_x_date(
       limits = as.Date(c("2014-01-01", "2025-12-31")),
       date_breaks = "1 year",
       date_labels = "%Y"
     ) +
-    labs(title = "Time Series by Category", x = "Date", y = "Word Occurrences", color = "Category") +
-    theme_half_open() +
+    labs(title = NULL, x = NULL, y = "Thread Counts", color = "Category") +
+    theme_classic() +
     theme(
-      legend.position        = c(0.58, 0.88),
+      legend.title = element_blank(),
+      legend.position        = c(0.05, 1),
       legend.justification   = c("left", "top"),
-      legend.background      = element_rect(fill = "white", color = "black", linewidth = 0.4),
+      legend.background      = element_rect(fill = "white", color = "black", linewidth = 0.2),
       legend.margin          = margin(4, 6, 4, 6),
-      legend.key.height      = unit(0.85, "lines"),
-      legend.key.size        = unit(0.85, "lines"),
-      legend.spacing.y       = unit(0.1, "cm")
+      legend.key.height      = unit(0.95, "lines"),
+      legend.key.size        = unit(2.2, "lines"),
+      legend.spacing.y       = unit(0.1, "cm"),
+      axis.text = element_text(color = "gray70"),
+      axis.title = element_text(color = "gray50"),
+      axis.line = element_line(color = "gray80"), 
+      axis.ticks = element_line(color = "gray80") 
     )
   ggsave(output_path, plot = p, width = width, height = height, dpi = 300, units = "in")
   return(p)
@@ -184,10 +194,9 @@ labels <- read_excel("word_dict_5.xlsx")
 
 ```{r}
 make_ts_split <- function(dfs, labels, output_path,
-                          width = 12, height = 6) {
+                          width = 8, height = 4) {
   left_labels  <- c("Democrat", "Liberal", "Left")
   right_labels <- c("Republican", "Conservative", "Right")
-
   df_long <- map_dfr(dfs, function(df) {
     colnames(df)[1] <- "word"
     df %>% pivot_longer(-word, names_to = "date", values_to = "count")
@@ -208,46 +217,60 @@ make_ts_split <- function(dfs, labels, output_path,
     ) %>%
     group_by(week, info, side) %>%
     summarise(total = sum(count, na.rm = TRUE), .groups = "drop")
-
   p <- ggplot(df_long, aes(x = week, y = total, color = info)) +
     geom_line(linewidth = 0.5) +
     facet_wrap(~ side) +
     scale_color_manual(values = cat_colors) +
     scale_x_date(
       limits      = as.Date(c("2014-01-01", "2025-12-31")),
-      date_breaks = "1 year",
+      breaks      = as.Date(c("2014-01-01", "2016-01-01",
+                              "2016-01-01", "2018-01-01",
+                              "2018-01-01", "2020-01-01",
+                              "2020-01-01", "2022-01-01",
+                              "2020-01-01", "2024-01-01")),
       date_labels = "%Y",
       expand      = expansion(mult = c(0.01, 0.01))
     ) +
     scale_y_continuous(expand = expansion(mult = c(0, 0.05))) +
     labs(
-      title = "Time Series by Category",
+      title = NULL,
       x     = NULL,
-      y     = "Word occurrences",
+      y     = "Thread Count",
       color = NULL
     ) +
+    guides(color = guide_legend(
+      override.aes = list(linewidth = 2.5),
+      nrow = 1
+    )) +
     cowplot::theme_cowplot(font_size = 12) +
     cowplot::background_grid(major = "y", minor = "none",
                              color.major = "grey92", size.major = 0.3) +
     cowplot::panel_border(color = "grey80", size = 0.4) +
     theme(
+      plot.background      = element_rect(fill = "white", color = NA),
+      panel.background     = element_rect(fill = "white", color = NA),
       strip.background     = element_rect(fill = "grey95", color = NA),
       strip.text           = element_text(face = "bold", size = 11,
+                                          color = "gray30",
                                           margin = margin(6, 0, 6, 0)),
-      axis.text.x          = element_text(angle = 45, hjust = 1),
-      axis.line            = element_line(color = "grey50", linewidth = 0.3),
-      axis.ticks           = element_line(color = "grey50", linewidth = 0.3),
+      axis.text            = element_text(color = "gray70"),
+      axis.text.x          = element_text(color = "gray70", hjust = 0),
+      axis.title           = element_text(color = "gray50"),
+      axis.line            = element_line(color = "gray80", linewidth = 0.2),
+      axis.ticks           = element_line(color = "gray80", linewidth = 0.2),
       legend.position      = "bottom",
       legend.justification = "center",
       legend.box.margin    = margin(t = 4),
+      legend.key.size      = unit(2.2, "lines"),
+      legend.key.height    = unit(0.95, "lines"),
+      legend.text          = element_text(size = 11),
       panel.spacing.x      = unit(1.2, "lines"),
       plot.title           = element_text(face = "bold", size = 13,
                                           margin = margin(b = 8)),
       plot.margin          = margin(10, 14, 8, 10)
     )
-
   ggsave(output_path, plot = p, width = width, height = height,
-         dpi = 300, units = "in")
+         dpi = 300, units = "in", bg = "white")
   return(p)
 }
 ```
@@ -268,44 +291,75 @@ Compared to a (varied battery of) words referring to other group identities, par
 
 # Event Study Plot (Descriptive)
 Across all five cycles, partisan vocabulary spikes sharply in the days surrounding election day, while non-partisan vocabulary remains at baseline. The remainder of this section establishes (i) the magnitude of the partisan surge under formal modeling, (ii) that the temporal concentration could not plausibly arise by chance, and (iii) that the pattern holds — with notable heterogeneity — across all five cycles.
+
 ```{r}
-ev <- as.data.frame(read_parquet("event_study_data.parquet"))
+ev <- as.data.frame(read_parquet("cand_event_study_data.parquet"))
 ev$is_partisan <- factor(ev$is_partisan, levels = c(FALSE, TRUE),
                          labels = c("non-partisan", "partisan"))
 ev$rate_ratio <- exp(ev$log_dev_smooth)
 window_band <- data.frame(
   xmin = -31, xmax = 31, ymin = -Inf, ymax = Inf
 )
-
-ggplot(ev, aes(x = days_to_election, y = rate_ratio,
-               color = is_partisan, group = is_partisan)) +
+p <- ggplot(ev, aes(x = days_to_election, y = rate_ratio,
+                    color = is_partisan, group = is_partisan)) +
   geom_rect(data = window_band,
             aes(xmin = xmin, xmax = xmax, ymin = ymin, ymax = ymax),
-            inherit.aes = FALSE, fill = "#c1272d", alpha = 0.06) +
-  geom_hline(yintercept = 1, linetype = "dashed", alpha = 0.4) +
-  geom_vline(xintercept = 0, color = "gray40", alpha = 0.6) +
+            inherit.aes = FALSE, fill = "#00A087FF", alpha = 0.1) +
+  geom_hline(yintercept = 1, linetype = "dashed", color = "gray60", alpha = 0.5) +
+  geom_vline(xintercept = 0, color = "gray60", alpha = 0.6) +
   geom_line(linewidth = 0.8) +
-  facet_wrap(~ cycle_year, ncol = 2) +
+  facet_wrap(~ cycle_year, ncol = 2,
+             labeller = as_labeller(function(x) paste(x, "U.S. Election"))) +
   scale_y_continuous(trans = "log2",
                      breaks = c(0.5, 1, 2, 4, 8),
-                     labels = c("0.5×", "1×", "2×", "4×", "8×")) +
-  scale_color_manual(values = c("non-partisan" = "#666666",
-                                "partisan"     = "#c1272d")) +
+                     labels = c("0.5×", "1×", "2×", "4×", "8×"),
+                     expand = expansion(mult = c(0.02, 0.05))) +
+  scale_x_continuous(expand = expansion(mult = c(0.01, 0.01))) +
+  scale_color_manual(values = c("non-partisan" = "#A0A0A0",
+                                "partisan"     = "#00A087FF")) +
   labs(
-    x     = "days relative to election day",
-    y     = "rate relative to off-cycle baseline (log scale)",
+    x     = "Days Pre-Election and Post-Election",
+    y     = "Usage rate compared to baseline (log scale) ",
     color = NULL,
-    title = "Daily rate of partisan vs. non-partisan vocabulary around each election",
-    subtitle = "7-day centered rolling mean; pink band = 63-day window used in formal tests"
+    title = NULL
   ) +
-  theme_minimal(base_size = 11) +
-  theme(legend.position = "top",
-        strip.text = element_text(face = "bold"))
-
-ggsave("event_study.png", width = 10, height = 7, dpi = 150)
+  guides(color = guide_legend(
+    override.aes = list(linewidth = 2.5),
+    nrow = 1
+  )) +
+  cowplot::theme_cowplot(font_size = 12) +
+  cowplot::background_grid(major = "y", minor = "none",
+                           color.major = "grey92", size.major = 0.3) +
+  cowplot::panel_border(color = "grey80", size = 0.4) +
+  theme(
+    plot.background      = element_rect(fill = "white", color = NA),
+    panel.background     = element_rect(fill = "white", color = NA),
+    strip.background     = element_blank(),
+    strip.text           = element_text(face = "bold", size = 11,
+                                        color = "gray30",
+                                        hjust = 0,
+                                        margin = margin(2, 0, 4, 0)),
+    axis.text            = element_text(color = "gray70"),
+    axis.text.x          = element_text(color = "gray70", hjust = 0.5),
+    axis.title           = element_text(color = "gray50"),
+    axis.line            = element_line(color = "gray80", linewidth = 0.2),
+    axis.ticks           = element_line(color = "gray80", linewidth = 0.2),
+    legend.position      = "top",
+    legend.justification = "center",
+    legend.box.margin    = margin(t = 4),
+    legend.key.size      = unit(2.2, "lines"),
+    legend.key.height    = unit(0.95, "lines"),
+    legend.text          = element_text(size = 11),
+    panel.spacing.x      = unit(1.2, "lines"),
+    panel.spacing.y      = unit(0.8, "lines"),
+    plot.title           = element_text(face = "bold", size = 13,
+                                        color = "gray20",
+                                        margin = margin(b = 8)),
+    plot.margin          = margin(10, 14, 8, 10)
+  )
+ggsave("event_study.png", plot = p, width = 9, height = 6,
+       dpi = 300, units = "in", bg = "white")
 ```
-... and then look into / suggest what happened in 2016 (what day that spike is)
-
 
 # Negative Binomial Regression
 We fit a fixed-effects negative binomial regression of weekly word counts on phase and phase × partisan interactions, with word fixed effects absorbing baseline frequencies, log total /pol/ posts as an offset to convert counts to rates, and standard errors two-way clustered by word and week. Phase main effects capture the non-partisan trajectory across the election cycle; the interaction terms estimate the additional partisan response in each phase relative to off-cycle, providing a difference-in-differences decomposition of election sensitivity.
@@ -333,6 +387,36 @@ m <- fenegbin(
 #https://yiqingxu.org/packages/fect/06-plots.html#placebo-testshape-markers I think I'm not sure how to operationalize 'period before election' for each word, if each election should be treated as independent? Or to show... 
 summary(m)
 ```
+```{r}
+dict <- c(
+  "phasepre_extended"                = "Pre-election (extended)",
+  "phasepre_2wk"                     = "Pre-election (2wk)",
+  "phaseelection_week"               = "Election week",
+  "phasepost_2wk"                    = "Post-election (2wk)",
+  "phasepost_extended"               = "Post-election (extended)",
+  "phase::pre_extended:is_partisan"  = "Pre-extended $\\times$ Partisan",
+  "phase::pre_2wk:is_partisan"       = "Pre-2wk $\\times$ Partisan",
+  "phase::election_week:is_partisan" = "Election week $\\times$ Partisan",
+  "phase::post_2wk:is_partisan"      = "Post-2wk $\\times$ Partisan",
+  "phase::post_extended:is_partisan" = "Post-extended $\\times$ Partisan",
+  "word"                             = "Word"
+)
+
+etable(
+  m,
+  dict      = dict,
+  tex       = TRUE,
+  file      = "nb_phase_partisan.tex",
+  replace   = TRUE,
+  title     = "Partisan vocabulary response across election-cycle phases",
+  label     = "tab:nb-phase-partisan",
+  digits    = 3,
+  fitstat = ~ n + pr2 + theta,
+  style.tex = style.tex("aer"),
+  notes     = "Negative binomial with word FE; SEs clustered by word and week. Offset: $\\log(\\text{total\\_posts})$."
+)
+```
+
 
 Non-partisan words show no detectable change across the election cycle (all phase main effects p > 0.5), ruling out generalized crowding-out of identity-related vocabulary during election weeks. Partisan words, by contrast, exhibit a sharp transient response: usage rates are 55% higher than off-cycle in the two weeks before the election (β = 0.437, p < 0.001), roughly 3× higher during election week itself (β = 1.098, p < 10⁻⁸), 33% higher in the two weeks after (β = 0.288, p < 0.05), and return to off-cycle baseline thereafter. The symmetric ramp-up and decay around a sharp election-week peak indicates that partisan vocabulary systematically rises during election timing at a higher rate than sustained shifts across all /pol/ discourse.
 
@@ -358,6 +442,11 @@ print(nonpartisan, row.names = FALSE)
 To test whether a word's temporal distribution is bounded to U.S. federal election dates, we use a per-word permutation test on the share of the word's usage falling within fixed-width windows centered on candidate dates. Under the null hypothesis that word w appears with equal probability in any post regardless of day, the log-ratio is centered at zero. Positive values indicate that word w is overrepresented in its time span; negative values indicate underrepresentation. To construct the null distribution, we sample 5 weeks from every non-election week from January 2014 to December 2025. For each word, a small p-value indicates that few alternative configurations of five non-election weeks produce concentrations as high as the one observed at the real election dates — that is, the word's temporal distribution is specifically organized around the actual election calendar rather than concentrated more generally. The category-level claim is that partisan words exhibit systematically lower per-word p-values than non-partisan words. We test this with a one-sided Mann-Whitney U test on the distributions of word p-values for the two groups.
 
 ```{r}
+library(kableExtra)
+library(arrow)
+```
+
+```{r}
 # These csvs don't need any modifications in R, unless want different format than LateX table. 
 detail  <- read.csv("partisan_specificity_detail.csv", check.names = FALSE,
                     stringsAsFactors = FALSE)
@@ -368,42 +457,77 @@ print (summary)
 ```
 Permutation p-values for non-partisan words were approximately uniform (median 0.567, 6.3% below 0.05), as expected under the null. Partisan words departed sharply from this baseline: 61.5% fell below 0.05, with a median of 0.038 and Q25 of 0.001, indicating a concentration of extreme values rather than a uniform shift. 
 
+```{r}
+# detail table
+detail |>
+  kbl(format    = "latex",
+      booktabs  = TRUE,
+      linesep   = "",
+      digits    = 3,
+      caption   = "Partisan specificity, by term.",
+      label     = "tab:partisan-detail") |>
+  kable_styling(latex_options = c("scale_down", "hold_position")) |>
+  writeLines("partisan_specificity_detail.tex")
+
+# summary table
+summary |>
+  kbl(format    = "latex",
+      booktabs  = TRUE,
+      linesep   = "",
+      digits    = 3,
+      caption   = "Specificity by partisan group.",
+      label     = "tab:specificity-summary") |>
+  kable_styling(latex_options = "hold_position") |>
+  writeLines("specificity_group_summary.tex")
+```
+
+
+
 ### Distribution of null/observed
 ```{r}
 null_df <- as.data.frame(read_parquet("group_specificity_null.parquet"))
 obs_df  <- as.data.frame(read_parquet("group_specificity_observed.parquet"))
+```
+
+```{r}
 obs_df$p_label <- ifelse(obs_df$p_value < 1/10000,
                          "p < 0.0001",
                          sprintf("p = %.4f", obs_df$p_value))
-obs_df$facet_label <- sprintf("%s words\nobserved median = %+.3f, %s",
-                              obs_df$group, obs_df$observed, obs_df$p_label)
+obs_df$facet_label <- paste(obs_df$group, "words")
 
 null_df <- merge(null_df,
                  obs_df[, c("group", "facet_label", "observed")],
                  by = "group", all.x = TRUE)
 
-# Set factor order so partisan appears first
-null_df$facet_label <- factor(null_df$facet_label,
-  levels = obs_df$facet_label[order(obs_df$group != "partisan")])
-
-ggplot(null_df, aes(x = median_log_ratio)) +
-  geom_histogram(bins = 60, fill = "gray70", color = "white", linewidth = 0.2) +
-  geom_vline(aes(xintercept = observed), color = "#c1272d", linewidth = 1) +
-  geom_vline(xintercept = 0, color = "black", linetype = "dashed", alpha = 0.4) +
-  facet_wrap(~ facet_label, scales = "free", ncol = 2) +
-  labs(
-    x = "median log-ratio across words in group",
-    y = "count of permutations",
-    title = "Group-level election-specificity null",
-    subtitle = "10,000 draws of 5 random non-election weeks; red line = observed value at real elections"
-  ) +
-  theme_minimal(base_size = 11) +
-  theme(plot.title = element_text(face = "bold"),
-        strip.text = element_text(face = "bold"))
-
-ggsave("group_specificity_null.png", width = 10, height = 4.5, dpi = 150)
+obs_df$annot_label <- sprintf("Election median\n(%s)", obs_df$p_label)
 
 ```
+
+```{r}
+ggplot(null_df, aes(x = median_log_ratio)) +
+  geom_histogram(bins = 60, fill = "gray70", color = "white", linewidth = 0.2) +
+  geom_vline(aes(xintercept = observed),
+             color = "#00A087FF", linewidth = 0.9, linetype = "dotted") +
+  geom_label(data = obs_df,
+             aes(x = Inf, y = Inf, label = annot_label),
+             hjust = 1.05, vjust = 1.3, size = 3, lineheight = 0.95,
+             color = "#00A087FF", fill = "white",
+             label.size = 0.3, label.padding = unit(0.25, "lines"),
+             inherit.aes = FALSE) +
+  facet_wrap(~ facet_label, scales = "free_x", ncol = 2) +
+  labs(x = "Median (log-ratio)",
+       y = "Number of permutations",
+       title = NULL, subtitle = NULL) +
+  theme_minimal(base_size = 12) +
+  theme(strip.text      = element_text(face = "bold"),
+        plot.background = element_rect(color = "gray30", fill = NA, linewidth = 0.5),
+        plot.margin     = margin(8, 10, 8, 8),
+        panel.spacing.x = unit(3, "lines"))   
+
+ggsave("group_specificity_null.png", width = 9, height = 4, dpi = 300)
+
+```
+
 The permutation test asks whether partisan (and separately, non-partisan) words are more concentrated at real election weeks than they would be at any random selection of 5 non-election weeks. For each iteration, we draw 5 eligible non-election weeks at random, compute each word's log-ratio of its share-in-window to total-volume-share-in-window, then take the median log-ratio across all words in the group. Repeating this 10,000 times gives a null distribution of "what does group-level concentration look like at five arbitrary weeks?" The observed statistic is the same median log-ratio computed at the five real election weeks. The p-value is the fraction of null draws that meet or exceed the observed value (one-sided, upper tail).
 
 For partisan words, the observed median log-ratio at real elections is +0.432, meaning partisan words appear at roughly e^0.432 ≈ 1.54× their baseline volume share during election windows. Only 1 of 10,000 random non-election-week draws produced a median this high (p < 0.0001), so the concentration *is highly unlikely under the null that election weeks are exchangeable with arbitrary non-election weeks*.
